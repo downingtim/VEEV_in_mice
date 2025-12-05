@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a complete bioinformatics pipeline for analyzing RNA-seq data from mouse cell lines infected with Venezuelan Equine Encephalitis Virus (VEEV). The analysis includes quality control, read filtering, viral/host discrimination, variant calling, amino acid annotation, and comprehensive differential gene expression analysis using both bulk RNA-seq (Limma) and transcript-level (Sleuth) methods.
+This repository contains a complete bioinformatics pipeline for analyzing RNA-seq data from mouse cell lines infected with Venezuelan Equine Encephalitis Virus (VEEV). The analysis includes quality control, read filtering, viral/host discrimination, variant calling, amino acid annotation, and differential gene expression analysis.
 
 **Experiment Design:** The dataset consists of 9 samples across three treatment groups:
 - **Control** (3 samples): Mock-infected cells
@@ -156,127 +156,34 @@ VEEV genome organization: Capsid → E3 → E2 → 6K → E1 (structural and non
   - `VEEV_mouse_summary.txt`: Group-level summary statistics
   - `VEEV_mouse_boxplot.pdf` and `VEEV_mouse_boxplot.ylim.pdf`: Comparative plots
 
-### Phase 6: Differential Gene Expression Analysis
-
-**11_code.R** (R script - Primary Expression Analysis)
-
-Comprehensive differential expression analysis using two complementary methods:
-
-**A. Data Import and Sample Preparation**
-- Reads sample metadata from `table.csv` with columns: sample, condition (C/WT/4x), path (Kallisto output directory)
-- Uses Sleuth for initial data organization and quality control
-- Extracts TPM (transcripts per million) values for exploratory analysis
-- Filters for genes with non-zero variance across samples
-
-**B. Exploratory Analysis**
-- **PCA plots (PC1-PC2 and PC3-PC4):**
-  - Visualizes sample clustering and separation by treatment condition
-  - Color-coded by group (Control: black, WT: dark red, 4X: navy)
-  - Labels samples with treatment information
-  - Shows variance explained by each principal component
-- **Sample heatmap:**
-  - Hierarchical clustering of samples based on expression similarity
-  - Uses filtered TPM values (non-zero variance)
-  - Aids in identifying technical artifacts or batch effects
-  - Cluster dendrogram reveals sample grouping patterns
-
-**C. Gene Annotation Integration**
-- Retrieves transcript-to-gene mapping from Ensembl BiomaRt
-- Mouse dataset: mmusculus_gene_ensembl (January 2024 release)
-- Downloads for each transcript:
-  - Ensembl transcript ID and version
-  - Ensembl gene ID
-  - External gene name (common gene symbol)
-  - Transcript biotype
-  - Gene description
-- Merges transcript-level expression results with gene annotations
-
-**D. Limma-Voom Bulk RNA-Seq Analysis**
-- Imports Kallisto abundance.h5 files using tximport
-- Creates DGEList object with transcript-level counts
-- **Filtering and normalization:**
-  - Filters transcripts by expression level (filterByExpr)
-  - Retains 36,038 transcripts across multiple genes
-  - Calculates normalization factors using TMM
-  - Applies voom transformation for variance stabilization
-- **Statistical modeling:**
-  - Linear model fitting with design matrix: `~condition`
-  - Three treatment groups (Control, WT, 4X)
-  - Empirical Bayes estimation with trend variance (`trend=T`)
-  - Generates variance trend plot (plotSA)
-- **Pairwise comparisons:**
-  - Control vs WT: logFC sign inverted so positive = higher in WT
-  - Control vs 4X: logFC sign inverted so positive = higher in 4X
-  - WT vs 4X: logFC sign inverted so positive = higher in 4X
-- **Significance thresholds:**
-  - Adjusted p-value (q-value) < 0.05
-  - Log fold-change |logFC| > 3.18 (approximately 7-fold change)
-- **Output tables (37,207 transcripts each):**
-  - `limma.wt_c.csv`: WT vs Control comparison
-  - `limma.c_4x.csv`: 4X vs Control comparison
-  - `limma.wt_4x.csv`: 4X vs WT comparison
-- **Result summaries:**
-  - WT vs Control: 2,244 significant transcripts (1,592 genes); 1,227 higher in WT (1,024 genes), 1,017 higher in Control (601 genes)
-  - 4X vs Control: 42 significant transcripts (37 genes); 2 higher in 4X (2 genes), 40 higher in Control (36 genes)
-  - 4X vs WT: 1,911 significant transcripts (1,533 genes); 1,506 higher in 4X (1,275 genes), 405 higher in WT (287 genes)
-
-**E. Volcano Plots**
-- Three plots showing log fold-change vs. statistical significance
-- Points colored by direction of change (red = higher in infected, blue = higher in control/reference, green = higher in 4X)
-- Highlights top genes with gene name labels (ggrepel for non-overlapping placement)
-- Includes threshold lines (p-value = 0.05, logFC = ±3.18)
-- Outputs: `volcano.wt_c.pdf`, `volcano.c_4x.pdf`, `volcano.wt_4x.pdf`, and `volcano_combined.pdf`
-
-**F. Log Fold-Change Correlations**
-- **Three pairwise comparison plots:**
-  - Plot A: WT vs Control (x-axis) vs 4X vs Control (y-axis)
-  - Plot B: 4X vs WT (x-axis) vs 4X vs Control (y-axis)
-  - Plot C: WT vs 4X (x-axis) vs WT vs Control (y-axis)
-- **Annotations:**
-  - Pearson correlation coefficients displayed on each plot
-  - Linear regression line through data
-  - Quadrant labels showing gene direction patterns
-- **Partial correlations** (controlling for third comparison):
-  - Quantifies correlation while removing effect of third comparison
-  - Tests independence of expression changes across conditions
-- Outputs: `logFC_correlation_plots.pdf` and `logFC_correlation_plots.png` (15 × 5 inches)
-
-**G. Sleuth Transcript-Level Analysis**
-- **Data preparation:**
-  - Uses target_mapping parameter to aggregate transcripts to genes
-  - Aggregation column: `ens_gene` (Ensembl gene ID)
-  - Includes bootstrap replicates for uncertainty quantification
-  - Processes 35,793 targets through filtering
-- **Model fitting:**
-  - Full model: `~condition` (condition effect on gene expression)
-  - Reduced model: `~1` (null model with no condition effect)
-- **Statistical testing:**
-  - Likelihood ratio test (LRT) comparing full vs. reduced models
-  - Tests null hypothesis that condition has no effect on expression
-  - Accounts for technical variation via bootstrap distributions
-- **Filtering results:**
-  - Q-value (adjusted p-value) ≤ 0.05: 28,648 transcripts across 7,101 unique genes
-  - All results (q-value ≤ 1.0) saved for exploratory analysis
-- **Outputs:**
-  - `sleuth.DE.genes.csv`: Significant genes (qval ≤ 0.05) with test statistics
-  - `sleuth.all.genes.csv`: Complete results for all genes tested
-
-**H. Visualization Integration**
-- Combines all three volcano plots (A, B, C) into single figure with labels
-- Creates comparative correlation matrix visualizing expression relationships
-- Uses consistent color schemes across all plots
-- Publication-ready PDF and PNG outputs (300 DPI)
+**code.R** (R script - Primary Expression Analysis)
+- **Differential expression analysis** using two complementary methods:
+  - **Limma-voom:** Analyzes host (mouse) gene expression
+    - Generates DEG lists for three comparisons: Control vs WT, Control vs 4X, WT vs 4X
+    - Voom transformation for read count normalization
+    - Outputs: `limma.DE.c_4x.csv`, `limma.DE.wt_4x.csv`, `limma.DE.wt_c.csv`
+  - **Sleuth:** Transcript-level analysis with bootstrap resampling for uncertainty quantification
+    - Uses Kallisto pseudo-alignment data
+    - Accounts for technical variation across replicates
+    - Outputs: `sleuth.DE.genes.csv`
+- Reads host read counts from `count_host.txt` (generated by 04_viz.levels.R)
+- Handles read count normalization and filtering
+- Generates statistical summaries: log-fold changes, p-values, adjusted q-values
+- Outputs: Differential expression tables with effect sizes and significance metrics
+- Creates visualization plots:
+  - Volcano plots showing DEGs across comparisons
+  - Log-fold change correlation matrices
+  - Sample hierarchical clustering heatmaps
 
 ## Output Files
 
 ### TABLES/
 - **count_host.txt**: Read counts (viral vs mouse) per sample with percentages
 - **samples.txt**: Sample metadata and group assignments
-- **limma.wt_c.csv**: Limma differential expression (WT vs Control) - 37,207 transcripts
-- **limma.c_4x.csv**: Limma differential expression (4X vs Control) - 37,207 transcripts
-- **limma.wt_4x.csv**: Limma differential expression (4X vs WT) - 37,207 transcripts
-- **sleuth.DE.genes.csv**: Sleuth transcript-level DEG analysis (qval ≤ 0.05) - 28,648 transcripts, 7,101 genes
-- **sleuth.all.genes.csv**: Sleuth complete results (all genes tested)
+- **limma.DE.c_4x.csv**: Limma differential expression (Control vs 4X)
+- **limma.DE.wt_4x.csv**: Limma differential expression (WT vs 4X)
+- **limma.DE.wt_c.csv**: Limma differential expression (WT vs Control)
+- **sleuth.DE.genes.csv**: Sleuth transcript-level DEG analysis results
 
 ### VCFS/
 - **{Sample}.{Reference}.norm.bcf.filtered.tsv**: Normalized, quality-filtered variant calls in TSV format
@@ -288,18 +195,11 @@ Comprehensive differential expression analysis using two complementary methods:
   - Predicted amino acid changes
 
 ### FIGURES/
-- **PC1.PC2.pdf**: PCA plot of first two principal components
-- **PC3.PC4.pdf**: PCA plot of principal components 3 and 4
-- **plot_sample_heatmap.pdf**: Hierarchical clustering heatmap of samples with dendrograms
-- **plotSA.limma.pdf**: Variance trend plot (mean-variance relationship)
-- **pairs.limma.pdf**: Pairwise correlation matrix of comparisons
-- **volcano.wt_c.pdf**: Volcano plot (WT vs Control)
-- **volcano.c_4x.pdf**: Volcano plot (4X vs Control)
-- **volcano.wt_4x.pdf**: Volcano plot (4X vs WT)
-- **volcano_combined.pdf**: All three volcano plots in single figure
-- **logFC_correlation_plots.pdf/png**: Three pairwise logFC correlation plots with regression lines
 - **VEEV_mouse_boxplot.pdf**: Viral read percentage by group (with all points)
 - **VEEV_mouse_boxplot.ylim.pdf**: Same plot with y-axis limited to 0-15.6% for clarity
+- **volcano_combined.pdf**: Volcano plots for all three pairwise comparisons
+- **logFC_correlation_plots.pdf/png**: Correlation matrices of log fold-changes between comparisons
+- **plot_sample_heatmap.pdf**: Hierarchical clustering heatmap of samples
 - **rdaf_depth_combined.py.pdf**: Read depth across full VEEV genome with gene annotations
 - **rdaf_depth_combined.py2.pdf, .py3.pdf**: Zoomed depth views of specific regions
 - **rdaf_combined.py.pdf**: Allele frequency across genome with gene coordinates
@@ -326,8 +226,6 @@ Comprehensive differential expression analysis using two complementary methods:
    - Raw Illumina FASTQ files in `ILLUMINA_FASTQS2/` directory (format: `{SAMPLE}_R1_001.fastq.gz`, `{SAMPLE}_R2_001.fastq.gz`)
    - Reference sequences in `REFERENCES/` directory
    - Annotation files (GFF) in `REFERENCES/` directory
-   - Kallisto pseudo-alignment results in per-sample directories (abundance.h5 files)
-   - Sample metadata file `table.csv` with columns: sample, condition, path
 
 2. **Execute QC and preprocessing:**
    ```bash
@@ -368,10 +266,10 @@ Comprehensive differential expression analysis using two complementary methods:
 7. **Analyze host gene expression and viral variation:**
    ```bash
    Rscript 04_viz.levels.R
-   Rscript 11_code.R
+   Rscript code.R
    ```
 
-8. **Generate viral variant visualizations:**
+8. **Generate visualizations:**
    ```bash
    Rscript 09_viz.py.R
    Rscript 10_viz.hist.R
@@ -379,37 +277,29 @@ Comprehensive differential expression analysis using two complementary methods:
 
 ## Key Parameters
 
-- **Quality filtering (reads):** Phred score ≥ 30, minimum length 60 bp
+- **Quality filtering:** Phred score ≥ 30, minimum length 60 bp
 - **Variant calling:** 
   - FreeBayes: Minimum allele frequency 0.1%, minimum 1 alternate read
   - BCFtools: Haploid ploidy, minimum 0.1% threshold
-- **Quality filtering (variants post-call):**
+- **Quality filtering (post-call):**
   - QUAL ≥ 30, Depth 5-1500×, MQ ≥ 40, AF ≥ 5%, FQ ≤ -50, VDB ≥ 0.01, strand bias ≥ 20%
 - **Mapping:** Minimap2 short-read mode optimized for Illumina sequencing
-- **RNA-Seq analysis:**
-  - Kallisto pseudo-alignment for transcript quantification
-  - Voom transformation and empirical Bayes estimation (Limma)
-  - Likelihood ratio test with bootstrap resampling (Sleuth)
-  - Significance thresholds: q-value < 0.05, |logFC| > 3.18 (Limma)
+- **Consensus:** Both LA (latest-allele) and LR (latest-read) haplotypes generated
 - **Read depth allele frequency:** Calculated at every genomic position from pileup data
-- **Gene filtering:** Minimum expression level retained by filterByExpr function
 
 ## Dependencies
 
 - **QC:** FastQC, fastp, FastQ quality trimmer, MultiQC
 - **Taxonomic:** Kraken2, KrakenTools
 - **Mapping/Variant:** Minimap2, SAMtools, FreeBayes, BCFtools
-- **Transcript quantification:** Kallisto (with rhdf5 output)
 - **Analysis:** 
-  - R (v4.4.4.1 or later)
-  - R packages: tidyverse, limma, sleuth, edgeR, tximport, ggplot2, ggrepel, ggpubr, grid, gridExtra, biomaRt, Biostrings, data.table, stringr, ppcor
+  - R packages: tidyverse, limma, sleuth, ggplot2, emmeans, Biostrings, data.table, stringr
   - Python packages: pysam, pandas, glob, re
 
 ## References
 
 - VEEV strain: 68U201 (primary) and 7141 variant
-- Mouse genome: Ensembl January 2024 release (mmusculus_gene_ensembl)
-- Transcript quantification: Kallisto (Bray et al., Nature Biotechnology 2016)
+- Mouse genome: Integrated from Kraken2 mouse database
 - Variant calling: BCFtools and FreeBayes best practices
 - Statistical methods: 
   - Limma-voom for bulk RNA-seq (Law et al., Genome Biology 2014)
