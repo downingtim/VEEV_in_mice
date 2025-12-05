@@ -1,0 +1,1 @@
+CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE_1	DP	MQ	MQ0F	AF1	FQ	VDB	DP4	IS_INDEL	strand_bias	pass_qual	pass_depth	pass_mq	pass_mq0f	pass_af	pass_fq	pass_vdb	pass_strand	PASS
